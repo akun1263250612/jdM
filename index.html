@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			#box{
+				width: 300px;
+				height: 60px;
+				background: #000;
+				position: absolute;
+			}
+			#pro{
+				float: left;
+				width: 80%;
+				height: 3px;
+				background: #ccc;
+				position: relative;
+				top: 29px;
+				left: 20px;
+			}
+			
+			#bar{
+				width: 0%;
+				height: 100%;
+				background: red;
+				display: inline-block;
+				position: relative;
+				top: -11.8px;
+				left: 0;
+			}
+			#con{
+				width: 10px;
+				height: 10px;
+				background: #fff;
+				position: relative;
+				top: -25px;
+				left: -12px;
+				cursor: pointer;
+			}
+			#btn{
+				position: relative;
+				top: 10px;
+			}
+			.lrc{
+				width: 300px;
+				height: 300px;
+				border: 1px solid red;
+				margin-top: 70px;
+				position: relative;
+				overflow: hidden;
+			}
+			#u{
+				list-style: none;
+				position: absolute;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<audio id="mp" controls="controls">
+			<source src="江南.mp3" ></source>
+		</audio>
+		<div id="box">
+			<div id="pro">
+				<span id="bar"></span>
+				<div id="con"></div>
+			</div>
+		</div>
+		<div class="lrc">
+			<ul id="u">
+			</ul>
+		</div>
+		<button id="btn">播放\暂停</button>
+	</body>
+	<script type="text/javascript" src="jquery-3.2.1.min.js" ></script>
+	<script type="text/javascript">
+		//获取页面所有元素
+		var ad = $('#mp')[0],box =$('#box'),pro = $('#pro'),bar = $('#bar'),con = $('#con'),btn = $('#btn');
+		//控制播放或者暂停的flag值
+		var flag = false;
+		
+		$.get({//向歌词文件发送请求，获取歌词内容
+			url:'lrc.txt'
+		}).done(function(data){
+			//将歌词通过“[”来截取，得出每一句歌词
+			var datas = data.split('[')
+			$.each(datas, function(i,v) {
+				//将每一句歌词通过“]”来截取，分别得出时间和歌词文本
+				var txt = v.split(']')
+				//将每一句歌词文本添加到li里面，再将li添加到ul里面
+				$('#u').append("<li>"+txt[1]+"</li>")
+			});
+		})
+		
+		//点击按钮，执行播放或者暂停
+		btn.click(function(){
+			console.log(ad,flag)
+			if(flag){
+				ad.pause();
+				flag = !flag;
+			}else{
+				ad.play()
+				flag = !flag;
+			}
+			
+		})
+		//只要歌曲播放，就执行
+		ad.addEventListener('timeupdate',function(){
+			//console.log(ad.currentTime,ad.duration)/*已经播放的时长，总时长*/
+			var sc = ad.currentTime/ad.duration;
+			//改变已经播放的样式，就是那个红色的条条
+			bar.width(pro.width()*sc)
+			con.css('left',pro.width()*sc+'px')
+			//让歌词上滚
+			$('#u').css('top',-sc*$('#u').height()+'px')
+		})
+		
+		//鼠标拖动小滑块
+		con.mousedown(function(){
+			//鼠标拖动的时候，应该停止音乐播放
+			ad.pause();
+			flag = !flag;
+			box.on('mousemove',function(e){
+				var lt = e.clientX - pro.offset().left - box.offset().left;//获取进度条的初始位置
+				if(lt<=0){
+					lt = 0;
+				}
+				if(lt>=pro.width()){
+					lt = pro.width()
+				}
+				con.css('left',lt+'px')
+			})
+			
+			box.on('mouseup',function(){
+				var sc = con.offset().left/pro.width();
+				/*得出鼠标在进度条上面的位置，在进度条的百分之多少*/
+				ad.currentTime = ad.duration * sc;
+				//鼠标松开继续放歌
+				ad.play();
+				flag = !flag;
+				box.off('mousemove');
+			})
+		})
+		
+	</script>
+</html>
